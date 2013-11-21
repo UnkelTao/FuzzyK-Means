@@ -8,7 +8,7 @@ MapReduce framework;
 My graduation design;
 
 
-Hadoop 1.0.4
+Hadoop 1.1.0
 
 jdk 1.6.20
 
