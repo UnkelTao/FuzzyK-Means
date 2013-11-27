@@ -3,7 +3,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.text.DecimalFormat;
-
+import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -13,20 +13,20 @@ import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
+import java.util.Random;
+import com.unkeltao.FKmeansTool;
 
-
-
-
-public class CenterMapper extends Mapper<LongWritable, Text, Text, Text> {
+public class FormatMapper extends Mapper<LongWritable, Text, LongWritable, Text> {
 	
-	private double M;
 	private String[] center;
 	private int K,VK;
-	private double X[][],Temp[];
-	protected void setup(Context context) throws IOException,InterruptedException  
+	
+	double C0[];
+	protected void setup(Context context) throws IOException,InterruptedException  //read centerlist, and save to center[]
 	{
-		M=2;
 		String centerlist = "/FKmeans/center/center"; //center文件
     	Configuration conf1 = new Configuration(); 
     	conf1.set("hadoop.job.ugi", "hadoop-user,hadoop-user"); 
@@ -42,42 +42,19 @@ public class CenterMapper extends Mapper<LongWritable, Text, Text, Text> {
            }
        K=center.length;
        VK = center[0].split(" ").length;
-       X=new double[K][VK]; 
-       Temp=new double[K];
-       for(int i=0;i<K;i++){
-    	   Temp[i]=0;
-    	   for(int j=0;j<VK;j++)
-    		   X[i][j]=0;
-       }
 	}
 	
 	public void map(LongWritable key,Text value,Context context) throws IOException,InterruptedException
 	{
 			String outValue = new String(value.toString());
-			String[] arr =outValue.split("&"); 
-			String val = arr[0];
-			String[] U = arr[1].split("_")[0].split(" ");
-			String[] x = val.split(" ");
-			DecimalFormat df = new DecimalFormat("#0.00");
-			for(int i=0;i<K;i++)
-			{   
-				double tmp=Math.pow(Double.parseDouble(U[i]),M);
-				Temp[i]+=tmp;
-				//context.write(new Text(i+"_"+x.length),new Text(val+"_"+df.format(tmp)));
-				for(int j=0;j<VK;j++){
-					X[i][j]+= Double.parseDouble(x[j])*tmp;
-				}
+			int ans=0;
+			String val[] = outValue.split("&")[1].split(" ");
+		    double  mx = Double.parseDouble(val[0]);
+			for(int i=1;i<K;i++){
+				double p=Double.parseDouble(val[i]);
+				if(mx-p<0.0) {mx=p; ans=i;} 
 			}
+			context.write(key,new Text(""+(ans+1)));
 	}
-	 protected void cleanup(Context context) throws IOException, InterruptedException { 
-		 DecimalFormat df = new DecimalFormat("#0.00");
-		 for(int i=0;i<K;i++){
-			 String val="";
-			 for(int j=0;j<VK-1;j++){
-					val+=df.format(X[i][j])+" ";
-				}
-			 val+=df.format(X[i][VK-1])+"_"+df.format(Temp[i]);
-			 context.write(new Text(i+"_"+VK), new Text(val));
-		 }
-	 }
+
 }
