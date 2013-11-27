@@ -65,7 +65,7 @@ public class FKmeansDriver {
 		//Job迭代
 		while(i<time&&s>accuracy){
 			i++;
-			
+			double starttime = new Date().getTime();
 			//生成新的聚类中心
 			Configuration centerprocessConf = new Configuration();
 			centerprocessConf.set(input_path_key, input_path);
@@ -89,6 +89,9 @@ public class FKmeansDriver {
 				System.err.println("error!");
 				System.exit(1);
 			}
+
+			System.out.println("the "+i+"th: "+(new Date().getTime()-starttime));
+			System.out.println();
 		}
 		
 		//数据格式化配置
